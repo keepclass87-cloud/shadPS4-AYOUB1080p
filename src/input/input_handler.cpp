@@ -765,21 +765,29 @@ void ControllerOutput::FinalizeUpdate(u8 gamepad_index) {
         case TOUCHPAD_SWIPE_UP:
             if (new_button_state) {
                 StartTouchpadSwipe(controller, 0.5f, 0.85f, 0.5f, 0.15f);
+            } else {
+                ReleaseTouchpadSwipe();
             }
             break;
         case TOUCHPAD_SWIPE_DOWN:
             if (new_button_state) {
                 StartTouchpadSwipe(controller, 0.5f, 0.15f, 0.5f, 0.85f);
+            } else {
+                ReleaseTouchpadSwipe();
             }
             break;
         case TOUCHPAD_SWIPE_LEFT:
             if (new_button_state) {
                 StartTouchpadSwipe(controller, 0.85f, 0.5f, 0.15f, 0.5f);
+            } else {
+                ReleaseTouchpadSwipe();
             }
             break;
         case TOUCHPAD_SWIPE_RIGHT:
             if (new_button_state) {
                 StartTouchpadSwipe(controller, 0.15f, 0.5f, 0.85f, 0.5f);
+            } else {
+                ReleaseTouchpadSwipe();
             }
             break;
         case LEFTJOYSTICK_HALFMODE:

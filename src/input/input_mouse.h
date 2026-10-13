@@ -25,10 +25,13 @@ void EmulateGyro(GameController* controller, u32 interval);
 
 void ApplyMouseInputBlockers();
 
-// Plays a short one-finger swipe on the touchpad from (from_x, from_y) to (to_x, to_y),
-// coordinates in 0..1. Driven by MousePolling.
+// Plays a one-finger swipe on the touchpad from (from_x, from_y) to (to_x, to_y),
+// coordinates in 0..1. The finger stays on the touchpad at the end point until
+// ReleaseTouchpadSwipe is called (swipe-and-hold). Driven by MousePolling.
 void StartTouchpadSwipe(GameController* controller, float from_x, float from_y, float to_x,
                         float to_y);
+// Lifts the finger of the current swipe once its movement has finished.
+void ReleaseTouchpadSwipe();
 
 // Polls the mouse for changes
 Uint32 MousePolling(void* param, Uint32 id, Uint32 interval);

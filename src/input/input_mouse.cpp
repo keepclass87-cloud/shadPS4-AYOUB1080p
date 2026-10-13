@@ -131,6 +131,7 @@ struct SwipeState {
     GameController* controller = nullptr;
     float from_x = 0, from_y = 0, to_x = 0, to_y = 0;
     int tick = -1; // -1: no swipe in progress
+    bool held = false; // the swipe key is still pressed: keep the finger down at the end
 };
 
 std::mutex swipe_mutex;
@@ -144,6 +145,10 @@ bool UpdateTouchpadSwipe() {
         return false;
     }
     if (s.tick > swipe_move_ticks) {
+        if (s.held) {
+            // swipe-and-hold: the finger rests at the end point until the key is released
+            return true;
+        }
         // lift the finger
         s.controller->SetTouchpadState(0, false, s.to_x, s.to_y);
         s.tick = -1;
@@ -161,7 +166,12 @@ bool UpdateTouchpadSwipe() {
 void StartTouchpadSwipe(GameController* controller, float from_x, float from_y, float to_x,
                         float to_y) {
     std::lock_guard lock{swipe_mutex};
-    swipe_state = {controller, from_x, from_y, to_x, to_y, 0};
+    swipe_state = {controller, from_x, from_y, to_x, to_y, 0, true};
+}
+
+void ReleaseTouchpadSwipe() {
+    std::lock_guard lock{swipe_mutex};
+    swipe_state.held = false;
 }
 
 Uint32 MousePolling(void* param, Uint32 id, Uint32 interval) {
