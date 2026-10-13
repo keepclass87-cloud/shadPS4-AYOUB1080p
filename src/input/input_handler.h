@@ -53,6 +53,11 @@
 #define MOTION_TILT_LEFT 0x00800000
 #define MOTION_TILT_RIGHT 0x01000000
 #define MOTION_SHAKE 0x02000000
+// Keyboard touchpad swipes: pressing one plays a short one-finger swipe on the touchpad.
+#define TOUCHPAD_SWIPE_UP 0x04000000
+#define TOUCHPAD_SWIPE_DOWN 0x08000000
+#define TOUCHPAD_SWIPE_LEFT 0x10000000
+#define TOUCHPAD_SWIPE_RIGHT 0x20000000
 
 #define HOTKEY_FULLSCREEN 0xf0000001
 #define HOTKEY_PAUSE 0xf0000002
@@ -148,6 +153,10 @@ const std::map<std::string, u32> string_to_cbutton_map = {
     {"motion_tilt_left", MOTION_TILT_LEFT},
     {"motion_tilt_right", MOTION_TILT_RIGHT},
     {"motion_shake", MOTION_SHAKE},
+    {"touchpad_swipe_up", TOUCHPAD_SWIPE_UP},
+    {"touchpad_swipe_down", TOUCHPAD_SWIPE_DOWN},
+    {"touchpad_swipe_left", TOUCHPAD_SWIPE_LEFT},
+    {"touchpad_swipe_right", TOUCHPAD_SWIPE_RIGHT},
 
     // this is only for input
     {"back", SDL_GAMEPAD_BUTTON_BACK},
@@ -546,7 +555,7 @@ public:
 
 class ControllerAllOutputs {
 public:
-    static constexpr u64 output_count = 46;
+    static constexpr u64 output_count = 50;
     std::array<ControllerOutput, output_count> data = {
         // Important: these have to be the first, or else they will update in the wrong order
         ControllerOutput(LEFTJOYSTICK_HALFMODE),
@@ -576,6 +585,10 @@ public:
         ControllerOutput(MOTION_TILT_LEFT),
         ControllerOutput(MOTION_TILT_RIGHT),
         ControllerOutput(MOTION_SHAKE),
+        ControllerOutput(TOUCHPAD_SWIPE_UP),
+        ControllerOutput(TOUCHPAD_SWIPE_DOWN),
+        ControllerOutput(TOUCHPAD_SWIPE_LEFT),
+        ControllerOutput(TOUCHPAD_SWIPE_RIGHT),
 
         // Axis mappings
         // ControllerOutput(SDL_GAMEPAD_BUTTON_INVALID, SDL_GAMEPAD_AXIS_LEFTX, false),

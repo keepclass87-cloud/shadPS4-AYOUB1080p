@@ -740,19 +740,47 @@ void ControllerOutput::FinalizeUpdate(u8 gamepad_index) {
         controller = controllers[gamepad_index];
     else
         UNREACHABLE();
+    // Touchpad bindings: the left/center bindings use touch slot 0 and the right binding uses
+    // touch slot 1, so holding the left and right bindings together reports a two-finger touch
+    // (needed by games that ask for both sides of the touchpad at once). The touchpad click
+    // stays pressed while any of the three bindings is held.
+    static std::array<u8, 5> touchpad_bindings_held{};
+    auto UpdateTouchpadBinding = [&](u8 bit, int touch_index, float x) {
+        u8& held = touchpad_bindings_held[gamepad_index];
+        held = new_button_state ? (held | bit) : (held & ~bit);
+        controller->SetTouchpadState(touch_index, new_button_state, x, 0.5f);
+        controller->Button(SDLGamepadToOrbisButton(button), held != 0);
+    };
     if (button != SDL_GAMEPAD_BUTTON_INVALID) {
         switch (button) {
         case SDL_GAMEPAD_BUTTON_TOUCHPAD_LEFT:
-            controller->SetTouchpadState(0, new_button_state, 0.25f, 0.5f);
-            controller->Button(SDLGamepadToOrbisButton(button), new_button_state);
+            UpdateTouchpadBinding(1, 0, 0.25f);
             break;
         case SDL_GAMEPAD_BUTTON_TOUCHPAD_CENTER:
-            controller->SetTouchpadState(0, new_button_state, 0.50f, 0.5f);
-            controller->Button(SDLGamepadToOrbisButton(button), new_button_state);
+            UpdateTouchpadBinding(2, 0, 0.50f);
             break;
         case SDL_GAMEPAD_BUTTON_TOUCHPAD_RIGHT:
-            controller->SetTouchpadState(0, new_button_state, 0.75f, 0.5f);
-            controller->Button(SDLGamepadToOrbisButton(button), new_button_state);
+            UpdateTouchpadBinding(4, 1, 0.75f);
+            break;
+        case TOUCHPAD_SWIPE_UP:
+            if (new_button_state) {
+                StartTouchpadSwipe(controller, 0.5f, 0.85f, 0.5f, 0.15f);
+            }
+            break;
+        case TOUCHPAD_SWIPE_DOWN:
+            if (new_button_state) {
+                StartTouchpadSwipe(controller, 0.5f, 0.15f, 0.5f, 0.85f);
+            }
+            break;
+        case TOUCHPAD_SWIPE_LEFT:
+            if (new_button_state) {
+                StartTouchpadSwipe(controller, 0.85f, 0.5f, 0.15f, 0.5f);
+            }
+            break;
+        case TOUCHPAD_SWIPE_RIGHT:
+            if (new_button_state) {
+                StartTouchpadSwipe(controller, 0.15f, 0.5f, 0.85f, 0.5f);
+            }
             break;
         case LEFTJOYSTICK_HALFMODE:
             leftjoystick_halfmode = new_button_state;
