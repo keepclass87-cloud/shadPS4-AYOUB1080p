@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cmath>
+#include <mutex>
 
 #include "common/assert.h"
 #include "common/types.h"
@@ -123,8 +124,91 @@ void ApplyMouseInputBlockers() {
     }
 }
 
+namespace {
+
+// Number of polling ticks (33 ms each) the finger travels during a swipe.
+constexpr int swipe_move_ticks = 6;
+
+struct SwipeState {
+    GameController* controller = nullptr;
+    float from_x = 0, from_y = 0, to_x = 0, to_y = 0;
+    int tick = -1; // -1: no swipe in progress
+};
+
+struct ShakeState {
+    GameController* controller = nullptr;
+    bool active = false;
+    bool was_active = false;
+    u32 tick = 0;
+};
+
+std::mutex gesture_mutex;
+SwipeState swipe_state;
+ShakeState shake_state;
+
+// Advances the swipe by one tick. Returns true while the swipe owns touch slot 0.
+bool UpdateTouchpadSwipe() {
+    std::lock_guard lock{gesture_mutex};
+    auto& s = swipe_state;
+    if (s.tick < 0 || s.controller == nullptr) {
+        return false;
+    }
+    if (s.tick > swipe_move_ticks) {
+        // lift the finger
+        s.controller->SetTouchpadState(0, false, s.to_x, s.to_y);
+        s.tick = -1;
+        return true;
+    }
+    const float t = static_cast<float>(s.tick) / swipe_move_ticks;
+    s.controller->SetTouchpadState(0, true, s.from_x + (s.to_x - s.from_x) * t,
+                                   s.from_y + (s.to_y - s.from_y) * t);
+    s.tick++;
+    return true;
+}
+
+void UpdateMotionShake() {
+    std::lock_guard lock{gesture_mutex};
+    auto& s = shake_state;
+    if (s.controller == nullptr) {
+        return;
+    }
+    if (s.active) {
+        // Alternate strong up/down and sideways jolts about 5 times a second (3 polling ticks
+        // per direction), like rattling a spray can.
+        const float sign = ((s.tick / 3) % 2 == 0) ? 1.0f : -1.0f;
+        const float accel[3] = {sign * 12.0f, 9.81f + sign * 25.0f, sign * -8.0f};
+        const float gyro[3] = {sign * 6.0f, 0.0f, sign * -4.0f};
+        s.controller->UpdateMotion(gyro, accel);
+        s.tick++;
+        s.was_active = true;
+    } else if (s.was_active) {
+        const float accel[3] = {0.0f, 9.81f, 0.0f};
+        const float gyro[3] = {0.0f, 0.0f, 0.0f};
+        s.controller->UpdateMotion(gyro, accel);
+        s.was_active = false;
+    }
+}
+
+} // namespace
+
+void StartTouchpadSwipe(GameController* controller, float from_x, float from_y, float to_x,
+                        float to_y) {
+    std::lock_guard lock{gesture_mutex};
+    swipe_state = {controller, from_x, from_y, to_x, to_y, 0};
+}
+
+void SetMotionShake(GameController* controller, bool active) {
+    std::lock_guard lock{gesture_mutex};
+    shake_state.controller = controller;
+    shake_state.active = active;
+    if (active) {
+        shake_state.tick = 0;
+    }
+}
+
 Uint32 MousePolling(void* param, Uint32 id, Uint32 interval) {
     auto* controller = (GameController*)param;
+    const bool swipe_running = UpdateTouchpadSwipe();
     switch (mouse_mode) {
     case MouseMode::Joystick:
         EmulateJoystick(controller, interval);
@@ -133,12 +217,17 @@ Uint32 MousePolling(void* param, Uint32 id, Uint32 interval) {
         EmulateGyro(controller, interval);
         break;
     case MouseMode::Touchpad:
-        EmulateTouchpad(controller, interval);
+        // a keyboard swipe takes over the touchpad until it finishes
+        if (!swipe_running) {
+            EmulateTouchpad(controller, interval);
+        }
         break;
 
     default:
         break;
     }
+    // applied after the mouse modes so that shaking overrides the mouse-gyro accelerometer
+    UpdateMotionShake();
     return interval;
 }
 

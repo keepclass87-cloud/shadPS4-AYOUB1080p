@@ -117,6 +117,13 @@ void GameController::UpdateAcceleration(const float acceleration[3]) {
     std::memcpy(accel_buf, acceleration, sizeof(accel_buf));
 }
 
+void GameController::UpdateMotion(const float gyro[3], const float acceleration[3]) {
+    std::lock_guard lock{m_state_mutex};
+    std::memcpy(gyro_buf, gyro, sizeof(gyro_buf));
+    std::memcpy(accel_buf, acceleration, sizeof(accel_buf));
+    PushStateLocked();
+}
+
 void GameController::PollState() {
     std::lock_guard lock{m_state_mutex};
     PushStateLocked();

@@ -759,6 +759,29 @@ void ControllerOutput::FinalizeUpdate(u8 gamepad_index) {
         case SDL_GAMEPAD_BUTTON_TOUCHPAD_RIGHT:
             UpdateTouchpadBinding(4, 1, 0.75f);
             break;
+        case TOUCHPAD_SWIPE_UP:
+            if (new_button_state) {
+                StartTouchpadSwipe(controller, 0.5f, 0.85f, 0.5f, 0.15f);
+            }
+            break;
+        case TOUCHPAD_SWIPE_DOWN:
+            if (new_button_state) {
+                StartTouchpadSwipe(controller, 0.5f, 0.15f, 0.5f, 0.85f);
+            }
+            break;
+        case TOUCHPAD_SWIPE_LEFT:
+            if (new_button_state) {
+                StartTouchpadSwipe(controller, 0.85f, 0.5f, 0.15f, 0.5f);
+            }
+            break;
+        case TOUCHPAD_SWIPE_RIGHT:
+            if (new_button_state) {
+                StartTouchpadSwipe(controller, 0.15f, 0.5f, 0.85f, 0.5f);
+            }
+            break;
+        case MOTION_SHAKE:
+            SetMotionShake(controller, new_button_state);
+            break;
         case LEFTJOYSTICK_HALFMODE:
             leftjoystick_halfmode = new_button_state;
             break;

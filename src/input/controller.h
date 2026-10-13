@@ -97,6 +97,8 @@ public:
     void Axis(Input::Axis axis, int value, bool smooth = true);
     void UpdateGyro(const float gyro[3]);
     void UpdateAcceleration(const float acceleration[3]);
+    // Sets gyro and accelerometer together and publishes the new state right away.
+    void UpdateMotion(const float gyro[3], const float acceleration[3]);
     void PollState();
     void ResetOrientation();
     void SetLightBarRGB(u8 const r, u8 const g, u8 const b);
